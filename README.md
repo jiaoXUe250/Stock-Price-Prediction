@@ -1,5 +1,5 @@
 # Stock-Price-Prediction
-# Time Series Prediction using PyTorch
+# Stock-Price-Prediction using PyTorch
 
 ## Description
 This project implements a **time series prediction model** using **PyTorch**, integrating data preprocessing, model training, and evaluation.  
@@ -25,8 +25,7 @@ The workflow includes:
 ## Usage Instructions
 1. **Clone this repository**  
    ```bash
-   git clone https://github.com/yourusername/time-series-pytorch.git
-   cd time-series-pytorch
+   git clone https://github.com/jiaoXUe250/Stock-Price-Prediction.git
    ```  
 
 2. **Prepare dataset**  
@@ -63,22 +62,5 @@ pip install -r requirements.txt
 4. **Model Training**: Train the PyTorch model using an optimizer and loss function.  
 5. **Evaluation**: Compute MAE, MSE, and visualize predictions.  
 
-## Citations
-If you use this code in academic research, please cite:  
-```
-@misc{time-series-pytorch,
-  author = {Your Name},
-  title = {Time Series Prediction using PyTorch},
-  year = {2025},
-  howpublished = {\url{https://github.com/yourusername/time-series-pytorch}}
-}
-```  
 
-## License
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.  
-
-## Contribution Guidelines
-- Fork the repository.  
-- Create a new branch for your feature or bug fix.  
-- Submit a pull request with a detailed description.  
 
