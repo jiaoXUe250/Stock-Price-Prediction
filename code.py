@@ -1,4 +1,4 @@
-# ✅ 1. PyTorch Dataset: 构造多任务时间序列数据
+# ✅ 1. PyTorch Dataset: Construct multi-task time series data
 import pandas as pd
 import numpy as np
 import torch
@@ -14,14 +14,14 @@ sns.set(style="whitegrid")
 import torch
 print(torch.__version__)
 
-# ✅ 中心移动平均（CMA）函数
+# ✅ Centered Moving Average (CMA) function
 def compute_cma(volume, window=5):
     half = window // 2
     padded = np.pad(volume, (half, half), mode='edge')
     cma = np.convolve(padded, np.ones(window)/window, mode='valid')
     return cma
 
-# ✅ 结构压缩函数（拐点提取）
+# ✅ Structure compression function (inflection point extraction)
 def extract_structure_points(series):
     extrema = []
     for i in range(1, len(series)-1):
@@ -30,15 +30,15 @@ def extract_structure_points(series):
             extrema.append((i, series[i]))
     return np.array(extrema)
 
-# ✅ PyTorch 数据集类
+# ✅ PyTorch dataset class
 class StockMultiTaskDataset11(Dataset):
     def __init__(self, close_series, volume_series, seq_len=20):
         self.seq_len = seq_len
 
-        # 成交量 CMA 平滑
+        # Volume CMA smoothing
         volume_cma = compute_cma(volume_series, window=5)
 
-        # 收盘价结构压缩并插值恢复
+        # Closing price structural compression and interpolation recovery
         compressed_close = np.zeros_like(close_series)
         structure_points = extract_structure_points(close_series)
         for i, v in structure_points:
@@ -46,7 +46,7 @@ class StockMultiTaskDataset11(Dataset):
         nonzero_idx = np.where(compressed_close != 0)[0]
         compressed_close = np.interp(np.arange(len(close_series)), nonzero_idx, compressed_close[nonzero_idx])
 
-        # 构造 DataFrame 后归一化
+        # Construct DataFrame and normalize
         processed_df = pd.DataFrame({"close": compressed_close, "volume": volume_cma})
         self.scaler = MinMaxScaler()
         data = self.scaler.fit_transform(processed_df)
@@ -57,8 +57,8 @@ class StockMultiTaskDataset11(Dataset):
 
     def __getitem__(self, idx):
         seq = self.data[idx:idx + self.seq_len]                # [seq_len, 2]
-        next_price = self.data[idx + self.seq_len, 0]          # 收盘价
-        next_volume = self.data[idx + self.seq_len, 1]         # 成交量
+        next_price = self.data[idx + self.seq_len, 0]          # Closing price
+        next_volume = self.data[idx + self.seq_len, 1]         # Trading volume
         return torch.tensor(seq, dtype=torch.float32), \
                torch.tensor([next_price], dtype=torch.float32), \
                torch.tensor([next_volume], dtype=torch.float32)
@@ -67,10 +67,10 @@ class StockMultiTaskDataset(Dataset):
     def __init__(self, close_series, volume_series, seq_len=20):
         self.seq_len = seq_len
 
-        # ✅ 1. 成交量 CMA 平滑
+        # ✅ 1. Volume CMA smoothing
         volume_cma = compute_cma(volume_series, window=5)
 
-        # ✅ 2. 收盘价结构压缩并插值恢复
+        # ✅ 2. Closing price structural compression and interpolation recovery
         compressed_close = np.zeros_like(close_series)
         structure_points = extract_structure_points(close_series)
         for i, v in structure_points:
@@ -78,14 +78,14 @@ class StockMultiTaskDataset(Dataset):
         nonzero_idx = np.where(compressed_close != 0)[0]
         compressed_close = np.interp(np.arange(len(close_series)), nonzero_idx, compressed_close[nonzero_idx])
 
-        # ✅ 3. 分别归一化
+        # ✅ 3. Normalize separately
         self.close_scaler = MinMaxScaler()
         self.volume_scaler = MinMaxScaler()
 
         close_norm = self.close_scaler.fit_transform(compressed_close.reshape(-1, 1))
         volume_norm = self.volume_scaler.fit_transform(volume_cma.reshape(-1, 1))
 
-        # ✅ 4. 合并为 [N, 2]
+        # ✅ 4. Merge into [N, 2]
         self.data = np.hstack([close_norm, volume_norm])
 
     def __len__(self):
@@ -93,14 +93,14 @@ class StockMultiTaskDataset(Dataset):
 
     def __getitem__(self, idx):
         seq = self.data[idx:idx + self.seq_len]                # [seq_len, 2]
-        next_price = self.data[idx + self.seq_len, 0]          # 收盘价
-        next_volume = self.data[idx + self.seq_len, 1]         # 成交量
+        next_price = self.data[idx + self.seq_len, 0]          # Closing price
+        next_volume = self.data[idx + self.seq_len, 1]         # Trading volume
         return torch.tensor(seq, dtype=torch.float32), \
                torch.tensor([next_price], dtype=torch.float32), \
                torch.tensor([next_volume], dtype=torch.float32)
 
 
-# ✅ create_dataloaders 接收原始收盘价与成交量序列
+# ✅ create_dataloaders receives raw closing price and trading volume series
 def create_dataloaders_from_series11(close_series, volume_series, seq_len=20, batch_size=32):
     dataset = StockMultiTaskDataset(close_series, volume_series, seq_len=seq_len)
     total_size = len(dataset)
@@ -122,7 +122,7 @@ def create_dataloaders_from_series(close_series, volume_series, seq_len=10, batc
     val_size = int(0.15 * total_size)
     test_size = total_size - train_size - val_size
 
-    # ✅ 按顺序切
+    # ✅ Sequential slicing
     train_indices = range(0, train_size)
     val_indices = range(train_size, train_size + val_size)
     test_indices = range(train_size + val_size, total_size)
@@ -131,7 +131,7 @@ def create_dataloaders_from_series(close_series, volume_series, seq_len=10, batc
     val_set = torch.utils.data.Subset(dataset, val_indices)
     test_set = torch.utils.data.Subset(dataset, test_indices)
 
-    # ✅ shuffle=False 保证时间顺序
+    # ✅ shuffle=False to ensure time order
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
@@ -141,7 +141,7 @@ def create_dataloaders_from_series(close_series, volume_series, seq_len=10, batc
 
 
 
-# ✅ 2. Transformer Encoder-only 多任务模型
+# ✅ 2. Transformer Encoder-only Multi-task model
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, max_len=500):
         super().__init__()
@@ -178,7 +178,7 @@ class TransformerMultiTask(nn.Module):
         return self.price_head(last_token), self.volume_head(last_token)
 
 
-# ✅ 3. 多任务损失函数
+# ✅ 3. Multi-task loss function
 def multitask_loss(price_pred, price_true, vol_pred, vol_true, alpha=1.0, beta=0.2):
     loss_fn = nn.MSELoss()
     loss_price = loss_fn(price_pred, price_true)
@@ -186,7 +186,7 @@ def multitask_loss(price_pred, price_true, vol_pred, vol_true, alpha=1.0, beta=0
     return alpha * loss_price + beta * loss_vol
 
 
-# ✅ 4. 数据加载和划分
+# ✅ 4. Data loading and splitting
 from sklearn.model_selection import train_test_split
 
 
@@ -212,12 +212,12 @@ def create_dataloaders(df, seq_len=20, batch_size=1):
     val_size = int(0.15 * total_size)
     test_size = total_size - train_size - val_size
 
-    # ✅ 顺序切
+    # ✅ Sequential slicing
     train_set = torch.utils.data.Subset(dataset, range(0, train_size))
     val_set = torch.utils.data.Subset(dataset, range(train_size, train_size + val_size))
     test_set = torch.utils.data.Subset(dataset, range(train_size + val_size, total_size))
 
-    # ✅ 注意：时序预测不能乱序
+    # ✅ Note: Time-series prediction cannot be shuffled
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=False)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
@@ -226,7 +226,7 @@ def create_dataloaders(df, seq_len=20, batch_size=1):
 
 
 
-# ✅ 5. 训练与验证循环（带早停）
+# ✅ 5. Training and validation loop (with early stopping)
 def train_model(model, train_loader, val_loader, epochs=50, lr=1e-3, patience=5):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     best_loss = float('inf')
@@ -270,7 +270,7 @@ def train_model(model, train_loader, val_loader, epochs=50, lr=1e-3, patience=5)
     return history
 
 
-# ✅ 6. 可视化损失曲线
+# ✅ 6. Visualization of loss curves
 def plot_loss(history):
     plt.figure(figsize=(8, 5))
     plt.plot(history["train"], label="Train Loss")
@@ -285,7 +285,7 @@ def plot_loss(history):
     plt.show()
 
 
-# ✅ 7. 测试集评估 MAE 和 RMSE + 可视化预测
+# ✅ 7. Test set evaluation (MAE and RMSE) + prediction visualization
 
 def evaluate_model(model, test_loader):
     model.eval()
@@ -314,7 +314,7 @@ def evaluate_model(model, test_loader):
     print(f"Price - MAE: {mae_price:.4f}, RMSE: {rmse_price:.4f}")
     print(f"Volume - MAE: {mae_vol:.4f}, RMSE: {rmse_vol:.4f}")
     np.savez("predictions_ours_update.npz", preds=np.array(all_price_preds), trues=np.array(all_price_trues))
-    # 可视化收盘价预测 vs 真实
+    # Visualization: Closing price prediction vs true values
     plt.figure(figsize=(10, 4))
     plt.plot(all_price_trues[:200], label="True Price")
     plt.plot(all_price_preds[:200], label="Predicted Price")
@@ -327,7 +327,7 @@ def evaluate_model(model, test_loader):
     plt.savefig("price_prediction.png", format="png")
     plt.show()
 
-    # 可视化成交量预测 vs 真实
+    # Visualization: Trading volume prediction vs true values
     plt.figure(figsize=(10, 4))
     plt.plot(all_vol_trues[:200], label="True Volume")
     plt.plot(all_vol_preds[:200], label="Predicted Volume")
@@ -340,12 +340,11 @@ def evaluate_model(model, test_loader):
     plt.savefig("volume_prediction.png", format="png")
     plt.show()
 
-# ✅ 使用示例
-# ✅ 使用示例：
+# ✅ Usage example
 file_path = '/home/featurize/data/data_information/information_list.xlsx'
 df = pd.read_excel(file_path, engine='openpyxl')
-close_series = df['收盘价'].astype(float).values[:-7]
-volume_series = df['成交量'].astype(float).values[:-7]
+close_series = df['Price'].astype(float).values[:-7]
+volume_series = df['Volume'].astype(float).values[:-7]
 
 print(len(close_series))
 print(volume_series)
@@ -354,4 +353,3 @@ model = TransformerMultiTask()
 history = train_model(model, train_loader, val_loader)
 model.load_state_dict(torch.load("best_model.pt"))
 evaluate_model(model, test_loader)
-
