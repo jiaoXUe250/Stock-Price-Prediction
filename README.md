@@ -60,7 +60,18 @@ pip install -r requirements.txt
 2. **Scaling**: Apply Min–Max scaling for feature normalization.  
 3. **Dataset Preparation**: Create a sliding window for sequence input.  
 4. **Model Training**: Train the PyTorch model using an optimizer and loss function.  
-5. **Evaluation**: Compute MAE, MSE, and visualize predictions.  
+5. **Evaluation**: Compute MAE, MSE, and visualize predictions.
+
+## Materials & Methods
+Computing Infrastructure:
+Operating System: Windows 10
+Hardware: Intel i7 CPU, 16GB RAM, NVIDIA RTX 3060 GPU (12GB VRAM)
+Software: Python 3.9, PyTorch 1.13+, CUDA 11.6 (if GPU available)
+Model Implementation: PyTorch nn.Module with Transformer layers.
+
+
+## License
+This project is licensed under the MIT License.
 
 
 
